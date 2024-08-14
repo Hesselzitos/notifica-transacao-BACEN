@@ -1,6 +1,8 @@
 from __future__ import print_function
+from concurrent import futures
 
 import logging
+import time
 
 import grpc
 import transactionConsumer_pb2
@@ -19,9 +21,22 @@ def run():
         response = stub.Subscribe(transactionConsumer_pb2.AskForSubscribe(channel=quee, consumerName=consumerName))
         print(response.ack)
         if response.ack == "ok":
-            message = stub.ConsumeMessage(transactionConsumer_pb2.AskForMessage(channel=quee, consumerName=consumerName))
-            print(message)
+            while(1==1):
+                message = stub.ConsumeMessage(transactionConsumer_pb2.AskForMessage(channel=quee, consumerName=consumerName))
+                print(message)
+                if(message.ack=="No Messages"):
+                    timeTowait=10
+                else:
+                    timeTowait=0
+                time.sleep(timeTowait)
+    
+
+def serve():
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server.start()
+    run()
+    server.wait_for_termination()
 
 if __name__ == "__main__":
     logging.basicConfig()
-    run()
+    serve()
